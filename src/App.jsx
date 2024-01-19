@@ -50,10 +50,7 @@ function App() {
   const [account, setAccount] = useState(null);
   const [newExecuting, setNewExecuting] = useState(false);
   const [netNewExecuting, netSetNewExecuting] = useState(false);
-  const [executing, setExecuting] = useState(false);
   const [deploying, setDeploying] = useState(false);
-
-  let shouldShowGameBoard = false;
 
   const generateAccount = async () => {
     const key = await aleoWorker.getPrivateKey();
@@ -66,10 +63,25 @@ function App() {
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
+    //xIsNext == true >> 0,2,4,6,8 >> i=0,2,4~ 1u8
+    //xIsNext == false >> 1,3,5,7 >> i=1,3,5~ 2u8
+
+    //make_move  : player : u8 / row : u8 / col : u8  / board  { r1: { c1: 0u8, c2: 0u8, c3: 0u8 }, r2: { c1: 0u8, c2: 0u8, c3: 0u8 }, r3: { c1: 0u8, c2: 0u8, c3: 0u8 } }
+    // 0 = 1u8, 1u8
+    // 1 = 1u8, 2u8
+    // 2 = 1u8, 3u8
+    // 3 = 2u8, 1u8
+    // 4 = 2u8, 2u8
+    // 5 = 2u8, 3u8
+    // 6 = 3u8, 1u8
+    // 7 = 3u8, 2u8
+    // 8 = 3u8, 3u8
 
     const newSquares = squares.slice();
     console.log("newSquares", newSquares);
     newSquares[i] = xIsNext ? "X" : "O";
+    console.log("xIsNext", xIsNext);
+    console.log("newSquares", newSquares);
 
     console.log("newSquares[i]", newSquares[i]);
     console.log("xIsNext", xIsNext);
@@ -87,33 +99,15 @@ function App() {
     }
   }, [squares]);
 
-  async function new_board() {
+  async function local_new_board() {
     setNewExecuting(true);
-
-    // const program =
-    //   "program helloworld.aleo;\n\nfunction hello:\n    input r0 as u32.public;\n    input r1 as u32.private;\n    add r0 r1 into r2;\n    output r2 as u32.private;\n";
-    const result = await aleoWorker.localProgramExecution(tic_tac_toe, "new");
-    // const result = await aleoWorker.offlineProgramExecution(program, "hello", [
-    //   "5u32",
-    //   "5u32",
-    // ]);
-
+    const result = await aleoWorker.localProgramExecution(
+      tic_tac_toe,
+      "new",
+      []
+    );
     setNewExecuting(false);
     console.log("result", result);
-    shouldShowGameBoard = true;
-    // alert(JSON.stringify(result));
-  }
-
-  async function execute() {
-    setExecuting(true);
-    const result = await aleoWorker.localProgramExecution(
-      helloworld_program,
-      "main",
-      ["5u32", "5u32"]
-    );
-    setExecuting(false);
-
-    alert(JSON.stringify(result));
   }
 
   //NetworkProgramExecution
@@ -197,19 +191,12 @@ function App() {
               : `Click to generate account`}
           </button>
         </p>
-        <p>
-          <button disabled={executing} onClick={execute}>
-            {executing
-              ? `Executing...check console for details...`
-              : `Execute helloworld.aleo`}
-          </button>
-        </p>
 
         <p>
-          <button disabled={newExecuting} onClick={new_board}>
+          <button disabled={newExecuting} onClick={local_new_board}>
             {newExecuting
               ? `Executing...check console for details...`
-              : `Execute New Board`}
+              : `Execute Local New Board`}
           </button>
         </p>
 
@@ -226,7 +213,7 @@ function App() {
       </div>
 
       {/* Tic Tac Toe Board */}
-      {shouldShowGameBoard && (
+      {
         <div className="game-board-container">
           <div className="game-board">
             <div className="board-row">
@@ -264,7 +251,7 @@ function App() {
             </div>
           </div>
         </div>
-      )}
+      }
 
       {/* Advanced Section */}
       <div className="card">
